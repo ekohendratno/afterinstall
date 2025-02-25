@@ -1,88 +1,84 @@
 #!/bin/bash
 
-# Pastikan skrip dijalankan sebagai root
-if [ "$(id -u)" -ne 0 ]; then
-    echo "Harap jalankan skrip ini sebagai root atau dengan sudo!"
-    exit 1
-fi
+# Warna untuk output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
 
-# Minta input dari pengguna
-read -p "Masukkan nama web: " WEB_NAME
-WEB_NAME_SANITIZED=${WEB_NAME//-/_}
-read -p "Masukkan nama database: " DB_NAME
-read -p "Masukkan port: " PORT
-read -p "Pilih tipe web (php/nodejs): " WEB_TYPE
+# Fungsi untuk membuat website baru
+create_website() {
+    echo -e "${YELLOW}Masukkan nama web:${NC}"
+    read WEB_NAME
+    DB_NAME=$(echo "$WEB_NAME" | tr '-' '_')
 
-# Menentukan versi yang tersedia berdasarkan tipe
-if [ "$WEB_TYPE" == "php" ]; then
-    echo "Pilih versi PHP (7.1-8.3):"
-    read -p "Versi PHP: " PHP_VERSION
-elif [ "$WEB_TYPE" == "nodejs" ]; then
-    echo "Pilih versi Node.js (16-20):"
-    read -p "Versi Node.js: " NODE_VERSION
-else
-    echo "Tipe web tidak valid!"
-    exit 1
-fi
+    echo -e "${YELLOW}Masukkan port:${NC}"
+    read PORT
 
-# Membuat direktori website
-WEB_DIR="/var/www/$WEB_NAME"
-mkdir -p $WEB_DIR
+    echo -e "${YELLOW}Pilih tipe web (php/nodejs):${NC}"
+    read WEB_TYPE
 
-# Konfigurasi Nginx
-NGINX_CONF="/etc/nginx/sites-available/$WEB_NAME"
-echo "server {
-    listen $PORT;
-    server_name localhost;
-    root $WEB_DIR;
-    index index.html index.php index.js;
+    if [[ "$WEB_TYPE" == "php" ]]; then
+        echo -e "${YELLOW}Pilih versi PHP (7.1 - 8.3):${NC}"
+        read PHP_VERSION
+    elif [[ "$WEB_TYPE" == "nodejs" ]]; then
+        echo -e "${YELLOW}Pilih versi Node.js (16 - 20):${NC}"
+        read NODE_VERSION
+    else
+        echo -e "${RED}Tipe web tidak valid!${NC}"
+        exit 1
+    fi
 
-    location / {
-        try_files \$uri \$uri/ =404;
-    }
+    echo -e "${GREEN}Membuat database...${NC}"
+    mysql -u srv -psrV@1234 -e "CREATE DATABASE $DB_NAME;"
 
-    location ~ \.php$ {
-        include snippets/fastcgi-php.conf;
-        fastcgi_pass unix:/run/php/php$PHP_VERSION-fpm.sock;
-        fastcgi_param SCRIPT_FILENAME \$document_root\$fastcgi_script_name;
-        include fastcgi_params;
-    }
-}" > $NGINX_CONF
+    WEB_DIR="/var/www/$WEB_NAME"
+    echo -e "${GREEN}Membuat direktori web di $WEB_DIR...${NC}"
+    mkdir -p "$WEB_DIR"
 
-ln -s $NGINX_CONF /etc/nginx/sites-enabled/
+    if [[ "$WEB_TYPE" == "php" ]]; then
+        echo -e "${GREEN}Mengatur PHP versi $PHP_VERSION...${NC}"
+        echo "<?php phpinfo(); ?>" > "$WEB_DIR/index.php"
+        CONFIG_FILE="/etc/nginx/sites-available/$WEB_NAME"
+        echo "server {
+            listen $PORT;
+            server_name $WEB_NAME;
+            root $WEB_DIR;
+            index index.php;
 
-# Konfigurasi file contoh
-if [ "$WEB_TYPE" == "php" ]; then
-    echo "<?php phpinfo(); ?>" > "$WEB_DIR/index.php"
-    chown -R www-data:www-data "$WEB_DIR"
-    chmod -R 755 "$WEB_DIR"
+            location / {
+                try_files \$uri \$uri/ =404;
+            }
 
-elif [ "$WEB_TYPE" == "nodejs" ]; then
-    echo "const http = require('http');
-const server = http.createServer((req, res) => {
-    res.writeHead(200, {'Content-Type': 'text/plain'});
-    res.end('Selamat datang di $WEB_NAME!');
-});
-server.listen($PORT, () => {
-    console.log('Server berjalan di port $PORT');
-});" > "$WEB_DIR/index.js"
+            location ~ \.php$ {
+                include snippets/fastcgi-php.conf;
+                fastcgi_pass unix:/run/php/php$PHP_VERSION-fpm.sock;
+                fastcgi_param SCRIPT_FILENAME \$document_root\$fastcgi_script_name;
+                include fastcgi_params;
+            }
+        }" > "$CONFIG_FILE"
+    elif [[ "$WEB_TYPE" == "nodejs" ]]; then
+        echo -e "${GREEN}Mengatur Node.js versi $NODE_VERSION...${NC}"
+        echo "console.log('Selamat datang di $WEB_NAME');" > "$WEB_DIR/index.js"
+        CONFIG_FILE="/etc/nginx/sites-available/$WEB_NAME"
+        echo "server {
+            listen $PORT;
+            server_name $WEB_NAME;
 
-    cd "$WEB_DIR"
-    nvm use $NODE_VERSION
-    npm init -y
-    npm install
+            location / {
+                proxy_pass http://localhost:$PORT/;
+                proxy_http_version 1.1;
+                proxy_set_header Upgrade \$http_upgrade;
+                proxy_set_header Connection 'upgrade';
+                proxy_set_header Host \$host;
+                proxy_cache_bypass \$http_upgrade;
+            }
+        }" > "$CONFIG_FILE"
+    fi
 
-    chown -R www-data:www-data "$WEB_DIR"
-    chmod -R 755 "$WEB_DIR"
+    ln -s "$CONFIG_FILE" "/etc/nginx/sites-enabled/"
+    systemctl restart nginx
+    echo -e "${GREEN}Website $WEB_NAME berhasil dibuat di port $PORT!${NC}"
+}
 
-    # Menjalankan server Node.js
-    nohup node "$WEB_DIR/index.js" > "$WEB_DIR/output.log" 2>&1 &
-fi
-
-# Membuat database
-mysql -usrv -psrV@1234 -e "CREATE DATABASE $DB_NAME;"
-
-# Restart layanan
-systemctl restart nginx
-
-echo "Website $WEB_NAME berhasil dibuat dan berjalan di port $PORT!"
+create_website
