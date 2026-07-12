@@ -5,7 +5,7 @@ set -e
 # CLOUDFLARE TUNNEL TOKEN
 # https://s.id/mycloudflared
 ##############################################
-CF_TOKEN="eyJhIjoiYWFiMDFmNjEyNDQ4MjJhODYyOTZhMDRlYmU0ODEyM2QiLCJ0IjoiZTg4MzExMTQtMGJlMC00YzQxLTk5ZTctZjkzYzhlZWNkY2MxIiwicyI6Ik4yUmlNalF5TkdZdFlqRXpOQzAwWkRnM0xXSm1OR1l0TldabU0yRTJNREExWlRGaCJ9"
+CF_TOKEN="eyJhIjoiN2UzZjFjODZlZjZkN2ZiN2M2ODhlMTYwZDQ0NmQyOTQiLCJ0IjoiY2I4ZDRhMDQtM2E3Ni00MTA1LTgwNDYtNWY0OTBkMzQ1ODdjIiwicyI6Ik16bGlOemN3T0RZdE4yVmlaUzAwTlRneUxXRXhNMlV0WkdVM1pqUTBNalptTURZMiJ9"
 
 clear
 echo "============================================"
