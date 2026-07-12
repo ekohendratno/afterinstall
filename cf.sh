@@ -3,7 +3,12 @@ set -e
 
 ##############################################
 # CLOUDFLARE TUNNEL TOKEN
-# https://s.id/mycloudflared
+# 
+# curl -fsSL https://s.id/mycloudflared -o install.sh
+# chmod +x install.sh
+# sudo bash install.sh
+#
+#
 ##############################################
 CF_TOKEN="eyJhIjoiN2UzZjFjODZlZjZkN2ZiN2M2ODhlMTYwZDQ0NmQyOTQiLCJ0IjoiY2I4ZDRhMDQtM2E3Ni00MTA1LTgwNDYtNWY0OTBkMzQ1ODdjIiwicyI6Ik16bGlOemN3T0RZdE4yVmlaUzAwTlRneUxXRXhNMlV0WkdVM1pqUTBNalptTURZMiJ9"
 
