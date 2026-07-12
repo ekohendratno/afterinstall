@@ -3,6 +3,7 @@ set -e
 
 ##############################################
 # CLOUDFLARE TUNNEL TOKEN
+# https://s.id/mycloudflared
 ##############################################
 CF_TOKEN="eyJhIjoiYWFiMDFmNjEyNDQ4MjJhODYyOTZhMDRlYmU0ODEyM2QiLCJ0IjoiZTg4MzExMTQtMGJlMC00YzQxLTk5ZTctZjkzYzhlZWNkY2MxIiwicyI6Ik4yUmlNalF5TkdZdFlqRXpOQzAwWkRnM0xXSm1OR1l0TldabU0yRTJNREExWlRGaCJ9"
 
